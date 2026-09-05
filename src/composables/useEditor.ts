@@ -204,13 +204,6 @@ function createEditorState() {
     draft.value.layout.grid[key] = Math.max(1, Math.min(12, Math.round(n)))
   }
 
-  function setLayoutMode(mode: 'grid' | 'vertical'): void {
-    if (!draft.value) {
-      return
-    }
-    draft.value.layout.mode = mode
-  }
-
   function validateDraft(): string | null {
     const c = draft.value
     if (!c) {
@@ -401,7 +394,7 @@ function createEditorState() {
     removeService,
     duplicateService,
     setGridValue,
-    setLayoutMode,
+
     selectedGroup,
     selectedService,
     setIcon,

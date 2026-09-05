@@ -38,6 +38,20 @@
     </select>
 
     <select
+      :value="layoutModeValue"
+      :title="t('editor.field.layoutMode.label')"
+      class="h-9 rounded-full bg-fg/10 hover:bg-fg/15 border border-fg/10 text-fg text-sm pl-3 pr-2 cursor-pointer outline-none focus:ring-2 focus:ring-brand-500"
+      @change="onLayoutModeChange"
+    >
+      <option value="grid">
+        {{ t('editor.field.layoutMode.grid') }}
+      </option>
+      <option value="vertical">
+        {{ t('editor.field.layoutMode.vertical') }}
+      </option>
+    </select>
+
+    <select
       :value="themeValue"
       :title="t('editor.field.theme')"
       class="h-9 rounded-full bg-fg/10 hover:bg-fg/15 border border-fg/10 text-fg text-sm pl-3 pr-2 cursor-pointer outline-none focus:ring-2 focus:ring-brand-500"
@@ -144,6 +158,31 @@ const canAddService = computed(() => selected.value?.kind === 'group' || selecte
 const themes = ['system', 'light', 'dark', 'deep', 'sepia', 'bluer'] as const
 
 const themeValue = computed(() => $settings.theme || 'system')
+
+const layoutModeValue = computed(() => $settings.layout?.mode ?? 'grid')
+
+async function onLayoutModeChange(event: Event) {
+  const next = (event.target as HTMLSelectElement).value as 'grid' | 'vertical'
+
+  // Instant visual feedback without waiting for the config round-trip.
+  if ($settings.layout) {
+    $settings.layout.mode = next
+  }
+
+  try {
+    const name = getActiveConfigName()
+    const config = await $fetch<CompleteConfig>(`/api/config/${name}`)
+    config.layout = { ...config.layout, mode: next }
+    // The config write broadcasts `config:update`; skip the redundant reload
+    // and re-sync the reactive state in place (same pattern as the editor save).
+    suppressNextConfigReload()
+    await $fetch(`/api/config/${name}`, { method: 'PUT', body: config })
+    await refreshConfig()
+  } catch {
+    // Persistence failed (e.g. offline) — keep the visual change; the next
+    // edit/save persists it anyway.
+  }
+}
 
 async function onLanguageChange(event: Event) {
   const next = (event.target as HTMLSelectElement).value as 'en' | 'zh'
